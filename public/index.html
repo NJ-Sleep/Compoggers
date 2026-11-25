@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#BFDCEC">
+<title>Laundry rack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --chalk: #EEF3F6;
+    --denim: #1D3557;
+    --sky: #BFDCEC;
+    --peg: #F0B73A;
+    --drizzle: #5B7C99;
+    --brick: #B5473B;
+    --muted: #4B627C;
+    --line: #C9D5DF;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--chalk);
+    color: var(--denim);
+    font-family: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 17px;
+    line-height: 1.45;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 20px 20px 48px; }
+  header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .conn { margin: 0; font-size: 15px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; }
+  .dot.on { background: #2F8F5B; }
+  .dot.off { background: var(--brick); }
+
+  /* the scene */
+  #scene { display: block; width: 100%; height: auto; border-radius: 6px; }
+  #laundry { transition: transform var(--travel, 5s) ease-in-out; transform: translateX(0); }
+  #scene[data-pos="out"] #laundry { transform: translateX(290px); }
+  #sun { transition: opacity .8s; }
+  #cloud { opacity: 0; transition: opacity .8s; }
+  #scene[data-rain="true"] #sun { opacity: .2; }
+  #scene[data-rain="true"] #cloud { opacity: 1; }
+  #rain { opacity: 0; transition: opacity .6s; }
+  #scene[data-rain="true"] #rain { opacity: 1; }
+  #drops { animation: fall .7s linear infinite; }
+  @keyframes fall { to { transform: translate(-8px, 30px); } }
+
+  .headline { margin: 22px 0 2px; font-size: 30px; line-height: 1.15; font-weight: 700; letter-spacing: -0.015em; }
+  .rain-line { margin: 0; color: var(--muted); }
+  .rain-line.wet { color: var(--denim); font-weight: 600; }
+
+  .readings { display: flex; gap: 48px; margin: 28px 0 0; padding: 0; }
+  .reading { margin: 0; }
+  .reading .num { font-size: 52px; line-height: 1; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .reading .unit { font-size: 22px; font-weight: 400; color: var(--muted); margin-left: 2px; }
+  .reading .name { display: block; color: var(--muted); font-size: 15px; margin-top: 4px; }
+  .dht-age { margin: 10px 0 0; font-size: 14px; color: var(--muted); }
+
+  .control { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); }
+  #move {
+    width: 100%; padding: 16px 20px; border: 0; border-radius: 6px;
+    background: var(--denim); color: var(--chalk);
+    font: inherit; font-size: 19px; font-weight: 600; cursor: pointer;
+  }
+  #move:disabled { background: var(--line); color: var(--muted); cursor: not-allowed; }
+  .run { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 15px; color: var(--muted); }
+  .run input {
+    width: 76px; padding: 6px 8px; font: inherit; color: var(--denim);
+    background: #fff; border: 1px solid var(--drizzle); border-radius: 4px;
+  }
+  #notice { min-height: 1.45em; margin: 12px 0 0; font-size: 15px; color: var(--denim); }
+
+  .light { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); }
+  .light h2 { margin: 0 0 12px; font-size: 17px; font-weight: 600; }
+  .bars { display: flex; align-items: flex-end; gap: 10px; height: 84px; }
+  .bar { flex: 1; max-width: 64px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; font-size: 13px; color: var(--muted); }
+  .bar i { display: block; width: 100%; background: var(--drizzle); border-radius: 3px 3px 0 0; min-height: 3px; }
+  .bar.dark i { background: var(--peg); outline: 2px solid var(--denim); }
+  .bar span { margin-top: 4px; }
+  .light p { margin: 12px 0 0; font-size: 15px; color: var(--muted); }
+
+  dialog { border: 0; border-radius: 8px; padding: 22px; max-width: 340px; width: calc(100% - 40px); background: var(--chalk); color: var(--denim); }
+  dialog::backdrop { background: rgba(29, 53, 87, .45); }
+  dialog h2 { margin: 0 0 6px; font-size: 20px; }
+  dialog p { margin: 0 0 14px; color: var(--muted); font-size: 15px; }
+  dialog input { width: 100%; padding: 10px; font: inherit; border: 1px solid var(--drizzle); border-radius: 4px; margin-bottom: 14px; }
+  dialog button { width: 100%; padding: 12px; border: 0; border-radius: 6px; background: var(--denim); color: var(--chalk); font: inherit; font-weight: 600; cursor: pointer; }
+
+  :focus-visible { outline: 3px solid var(--peg); outline-offset: 2px; }
+  #move:focus-visible { outline-color: var(--denim); outline-offset: 3px; }
+
+  @media (max-width: 480px) {
+    .headline { font-size: 26px; }
+    .reading .num { font-size: 44px; }
+    .readings { gap: 32px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #laundry, #sun, #cloud, #rain { transition: none; }
+    #drops { animation: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Laundry rack</h1>
+    <p class="conn"><span id="dot" class="dot"></span><span id="connText">Connecting</span></p>
+  </header>
+
+  <svg id="scene" viewBox="0 0 640 250" data-pos="in" data-rain="false" role="img" aria-label="Clothesline that moves between a shaded area on the left and open sun on the right">
+    <defs>
+      <clipPath id="rainClip">
+        <rect x="352" y="0" width="288" height="215"/>
+        <rect x="0" y="0" width="352" height="70"/>
+      </clipPath>
+    </defs>
+    <rect width="640" height="250" fill="#BFDCEC"/>
+    <g id="sun">
+      <circle cx="520" cy="62" r="46" fill="#F0B73A" opacity=".28"/>
+      <circle cx="520" cy="62" r="28" fill="#F0B73A"/>
+    </g>
+    <g id="cloud" fill="#5B7C99">
+      <ellipse cx="500" cy="52" rx="58" ry="22"/>
+      <ellipse cx="462" cy="62" rx="36" ry="18"/>
+      <ellipse cx="540" cy="62" rx="38" ry="18"/>
+    </g>
+    <!-- shade -->
+    <rect x="40" y="92" width="270" height="123" fill="#1D3557" opacity=".13"/>
+    <rect x="38" y="92" width="6" height="123" fill="#1D3557"/>
+    <rect x="306" y="92" width="6" height="123" fill="#1D3557"/>
+    <rect x="10" y="70" width="340" height="22" rx="2" fill="#1D3557"/>
+    <!-- rope loop -->
+    <rect x="588" y="128" width="5" height="87" fill="#1D3557"/>
+    <line x1="60" y1="92" x2="60" y2="119" stroke="#1D3557" stroke-width="3"/>
+    <line x1="60" y1="119" x2="590" y2="119" stroke="#5B7C99" stroke-width="2.5"/>
+    <line x1="60" y1="137" x2="590" y2="137" stroke="#5B7C99" stroke-width="2.5"/>
+    <circle cx="60" cy="128" r="9" fill="#EEF3F6" stroke="#1D3557" stroke-width="3"/>
+    <circle cx="590" cy="128" r="9" fill="#EEF3F6" stroke="#1D3557" stroke-width="3"/>
+    <!-- laundry -->
+    <g id="laundry">
+      <polygon points="80,124 140,124 158,140 148,150 136,142 136,186 84,186 84,142 72,150 62,140" fill="#FFFFFF" stroke="#1D3557" stroke-width="2" stroke-linejoin="round"/>
+      <rect x="180" y="124" width="46" height="72" rx="2" fill="#FFFFFF" stroke="#1D3557" stroke-width="2"/>
+      <line x1="180" y1="176" x2="226" y2="176" stroke="#5B7C99" stroke-width="3"/>
+      <line x1="180" y1="184" x2="226" y2="184" stroke="#5B7C99" stroke-width="3"/>
+      <rect x="250" y="124" width="16" height="30" rx="3" fill="#FFFFFF" stroke="#1D3557" stroke-width="2"/>
+      <rect x="272" y="124" width="16" height="30" rx="3" fill="#FFFFFF" stroke="#1D3557" stroke-width="2"/>
+      <g fill="#F0B73A" stroke="#1D3557" stroke-width="1.5">
+        <rect x="86" y="114" width="7" height="14" rx="1.5"/>
+        <rect x="128" y="114" width="7" height="14" rx="1.5"/>
+        <rect x="186" y="114" width="7" height="14" rx="1.5"/>
+        <rect x="214" y="114" width="7" height="14" rx="1.5"/>
+        <rect x="254" y="114" width="7" height="14" rx="1.5"/>
+        <rect x="276" y="114" width="7" height="14" rx="1.5"/>
+      </g>
+    </g>
+    <g id="rain" clip-path="url(#rainClip)">
+      <g id="drops" stroke="#5B7C99" stroke-width="2" stroke-linecap="round"></g>
+    </g>
+    <rect y="215" width="640" height="35" fill="#1D3557" opacity=".85"/>
+  </svg>
+
+  <p id="where" class="headline">Waiting for the rack</p>
+  <p id="rainText" class="rain-line">Rain status unknown</p>
+
+  <dl class="readings">
+    <div class="reading"><dd class="num" style="margin:0"><span id="temp">--</span><span class="unit">°C</span></dd><dt class="name">Temperature</dt></div>
+    <div class="reading"><dd class="num" style="margin:0"><span id="hum">--</span><span class="unit">%</span></dd><dt class="name">Humidity</dt></div>
+  </dl>
+  <p id="dhtAge" class="dht-age"></p>
+
+  <section class="control">
+    <button id="move" type="button" disabled>Waiting for the rack</button>
+    <label class="run">Motor run time
+      <input id="runSeconds" type="number" min="0.5" max="30" step="0.5" value="5" inputmode="decimal"> seconds
+    </label>
+    <p id="notice" aria-live="polite"></p>
+  </section>
+
+  <section class="light" id="lightSection" hidden>
+    <h2>Sunlight at each sensor</h2>
+    <div id="bars" class="bars"></div>
+    <p id="servoText"></p>
+  </section>
+</main>
+
+<dialog id="pinDialog">
+  <form id="pinForm" method="dialog">
+    <h2>Enter the access code</h2>
+    <p>This dashboard is locked. Ask the person who set it up for the code.</p>
+    <input id="pinInput" type="password" autocomplete="current-password" aria-label="Access code" required>
+    <button type="submit">Unlock</button>
+  </form>
+</dialog>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let state = null, fetchedAt = 0, busy = false, notice = '', noticeTimer = null, runEdited = false;
+let pin = localStorage.getItem('rackPin') || '';
+
+// rain drops (drawn once)
+(function drawDrops() {
+  const g = $('#drops');
+  let html = '';
+  for (let x = -20, i = 0; x < 660; x += 22, i++) {
+    for (let y = -60 + (i % 3) * 10; y < 230; y += 30) {
+      html += `<line x1="${x}" y1="${y}" x2="${x - 4}" y2="${y + 12}"/>`;
+    }
+  }
+  g.innerHTML = html;
+})();
+
+const ago = (ms) => {
+  const s = Math.max(0, Math.round(ms / 1000));
+  if (s < 10) return 'just now';
+  if (s < 60) return s + ' s ago';
+  if (s < 3600) return Math.round(s / 60) + ' min ago';
+  return Math.round(s / 3600) + ' h ago';
+};
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, {
+    ...opts,
+    cache: 'no-store',
+    headers: { 'content-type': 'application/json', 'x-pin': pin, ...(opts.headers || {}) },
+  });
+  if (r.status === 401) {
+    const d = $('#pinDialog');
+    if (!d.open) d.showModal();
+    throw new Error('pin');
+  }
+  return r;
+}
+
+async function refresh() {
+  try {
+    const r = await api('/api/status');
+    state = await r.json();
+    fetchedAt = Date.now();
+    render();
+  } catch (e) {
+    if (e.message !== 'pin') {
+      $('#dot').className = 'dot off';
+      $('#connText').textContent = 'Cannot reach the server';
+    }
+  }
+}
+
+const DEVICE_NOTES = {
+  'rejected-raining': "It's raining, so the rack stayed in the shade.",
+  'rejected-cooldown': 'The rack is still in its cooldown. Try again shortly.',
+  'rejected-busy': 'The rack was still moving, so it ignored that press.',
+  'ignored-stale': 'That press arrived too late, so the rack ignored it.',
+  'already-in': 'The clothes were already in the shade.',
+  'already-out': 'The clothes were already in the sun.',
+};
+
+function render() {
+  if (!state) return;
+  const t = state.telemetry;
+  const since = Date.now() - fetchedAt;
+  const btn = $('#move');
+
+  if (!t) {
+    $('#dot').className = 'dot';
+    $('#connText').textContent = 'No data yet';
+    $('#where').textContent = 'Waiting for the rack to report in';
+    btn.disabled = true;
+    btn.textContent = 'Waiting for the rack';
+    return;
+  }
+
+  const age = state.serverTime - t.receivedAt + since;
+  const online = age < 5 * 60000;
+  $('#dot').className = 'dot ' + (online ? 'on' : 'off');
+  $('#connText').textContent = online ? `Rack online, updated ${ago(age)}` : `Rack offline, last seen ${ago(age)}`;
+
+  // scene
+  const scene = $('#scene');
+  scene.dataset.pos = t.position;
+  scene.dataset.rain = String(!!t.raining);
+  scene.style.setProperty('--travel', (t.motorRunMs || 5000) + 'ms');
+
+  // status text
+  const out = t.position === 'out';
+  $('#where').textContent = t.moving
+    ? (out ? 'Pushing clothes out to the sun' : 'Pulling clothes into the shade')
+    : (out ? 'Clothes are in the sun' : 'Clothes are in the shade');
+  const rainEl = $('#rainText');
+  rainEl.textContent = t.raining ? 'Raining. The rack stays in the shade until the rain stops.' : 'Not raining';
+  rainEl.classList.toggle('wet', !!t.raining);
+
+  // DHT22
+  $('#temp').textContent = t.temperature != null ? t.temperature.toFixed(1) : '--';
+  $('#hum').textContent = t.humidity != null ? t.humidity.toFixed(0) : '--';
+  $('#dhtAge').textContent = t.dhtAt
+    ? `Temperature and humidity updated ${ago(state.serverTime - t.dhtAt + since)}, refreshed every 2 minutes`
+    : '';
+
+  // button
+  const next = out ? 'in' : 'out';
+  const left = Math.max(0, state.cooldownMs - since);
+  let label = next === 'in' ? 'Pull clothes into the shade' : 'Push clothes out to the sun';
+  let disabled = false;
+  if (busy) { disabled = true; label = 'Sending'; }
+  else if (!online) { disabled = true; label = 'Rack offline'; }
+  else if (t.moving) { disabled = true; label = 'Moving'; }
+  else if (left > 0) { disabled = true; label = `Available in ${Math.ceil(left / 1000)} s`; }
+  else if (next === 'out' && t.raining) { disabled = true; label = "Raining, can't go out"; }
+  btn.disabled = disabled;
+  btn.textContent = label;
+  btn.dataset.action = next;
+
+  // run time field
+  const input = $('#runSeconds');
+  if (!runEdited && t.motorRunMs && document.activeElement !== input) input.value = t.motorRunMs / 1000;
+
+  // note from the rack about the last press
+  let note = notice;
+  if (!note && state.command && t.lastCommandId === state.command.id) note = DEVICE_NOTES[t.lastResult] || '';
+  $('#notice').textContent = note;
+
+  // light sensors
+  if (t.ldr && t.ldr.length) {
+    $('#lightSection').hidden = false;
+    const min = t.ldr.indexOf(Math.min(...t.ldr));
+    $('#bars').innerHTML = t.ldr.map((v, i) =>
+      `<div class="bar${i === min ? ' dark' : ''}"><i style="height:${Math.max(3, Math.round(v / 4095 * 100))}%"></i><span>${i + 1}</span></div>`
+    ).join('');
+    $('#servoText').textContent = `Servo at ${t.servoAngle ?? '--'}°, turned toward sensor ${min + 1}, which has the least sun.`;
+  }
+}
+
+function setNotice(text) {
+  notice = text;
+  clearTimeout(noticeTimer);
+  if (text) noticeTimer = setTimeout(() => { notice = ''; render(); }, 10000);
+}
+
+$('#runSeconds').addEventListener('input', () => { runEdited = true; });
+
+$('#move').addEventListener('click', async () => {
+  const action = $('#move').dataset.action;
+  if (!action) return;
+  busy = true;
+  render();
+  try {
+    const r = await api('/api/button', {
+      method: 'POST',
+      body: JSON.stringify({ action, runMs: Number($('#runSeconds').value) * 1000 }),
+    });
+    const data = await r.json();
+    if (r.ok) {
+      setNotice('Sent. The rack picks it up within a few seconds.');
+      state.cooldownMs = data.cooldownMs;
+      fetchedAt = Date.now();
+    } else if (r.status === 429) {
+      setNotice(`Cooldown: try again in ${Math.ceil(data.remainingMs / 1000)} s.`);
+    } else if (data.error === 'raining') {
+      setNotice("It's raining, so the clothes can't go out.");
+    } else {
+      setNotice('Something went wrong. Try again.');
+    }
+  } catch (e) {
+    if (e.message !== 'pin') setNotice('Could not reach the server. Try again.');
+  }
+  busy = false;
+  refresh();
+});
+
+$('#pinForm').addEventListener('submit', () => {
+  pin = $('#pinInput').value.trim();
+  localStorage.setItem('rackPin', pin);
+  $('#pinInput').value = '';
+  setTimeout(refresh, 0);
+});
+
+refresh();
+setInterval(refresh, 5000);   // status refresh (the rack itself reports DHT22 every 2 min)
+setInterval(render, 1000);    // countdowns
+</script>
+</body>
+</html>
